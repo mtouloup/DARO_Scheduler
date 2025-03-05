@@ -58,7 +58,6 @@ for episode in range(num_test_episodes):
         state = next_state
 
         assigned_node = f"node-{actions.index(max(actions))}"
-        print(f"✅ Task {step + 1}: Assigned to {assigned_node}")
 
     total_rewards.append(episode_reward)
     print(f"🏆 Episode {episode + 1}: Total Reward = {episode_reward}")
