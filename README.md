@@ -27,10 +27,10 @@ This project **simulates Kubernetes pod scheduling** using **multi-agent reinfor
 ---
 
 ## Installation
-### ** Prerequisites**
+### Prerequisites
 Ensure you have **Python 3.8+** installed.  
 
-### ** Install Dependencies**
+### Install Dependencies
 ```
 pip install -r requirements.txt
 ```
@@ -39,7 +39,7 @@ pip install -r requirements.txt
 
 ## Usage
 
-### ** Training the Model**
+### Training the Model
 Train the MARL scheduler using:
 ```
 python qmix_training.py
@@ -49,7 +49,7 @@ python qmix_training.py
 
 ---
 
-### ** Testing the Model**
+### Testing the Model
 Once trained, evaluate the model:
 ```
 python qmix_test.py
