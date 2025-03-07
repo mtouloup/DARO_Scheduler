@@ -1,1 +1,92 @@
-# DARO_Scheduler
+# Kubernetes MARL-Based Pod Scheduling (DARO Framework)
+
+This repository implements a **Multi-Agent Reinforcement Learning (MARL) scheduler** for **Kubernetes clusters** using the **QMIX algorithm**. The system enables worker nodes to **bid for pod execution**, ensuring **efficient task distribution** based on available resources.
+
+## Overview
+This project **simulates Kubernetes pod scheduling** using **multi-agent reinforcement learning (MARL)**. Each **worker node is an agent**, and a **broker collects bids from agents** to assign tasks efficiently.
+
+**Key Features:**
+**Multi-Agent Reinforcement Learning (MARL)** using QMIX  
+**Kubernetes-style scheduling** with CPU & memory constraints  
+**Dynamic cluster scaling** (agents can increase/decrease)  
+**Randomized bid-based pod scheduling**  
+**Training on CPU/GPU automatically detected**  
+
+---
+
+## How It Works
+1. A **Kubernetes pod request** (task) is generated with specific **CPU & memory requirements**.
+2. Each **worker node (agent)** checks its **available resources** and **submits a bid** (1-10) if it can handle the task.
+3. The **broker collects all bids** and **assigns the task** to the **highest bidder**.
+4. A **reward system** ensures:
+   - **Winning agent gets +1 reward**.
+   - **Losing agents get -0.1 penalty**.
+5. The model is trained using **QMIX**, a deep MARL approach.
+
+---
+
+## Installation
+### ** Prerequisites**
+Ensure you have **Python 3.8+** installed.  
+
+### ** Install Dependencies**
+```
+pip install -r requirements.txt
+```
+
+---
+
+## Usage
+
+### ** Training the Model**
+Train the MARL scheduler using:
+```
+python qmix_training.py
+```
+- **This will detect your GPU automatically** and use it if available.
+- Model will be saved as **`qmix_trained_k8s.pth`**.
+
+---
+
+### ** Testing the Model**
+Once trained, evaluate the model:
+```
+python qmix_test.py
+```
+- The test script **simulates scheduling** and prints **which node wins each task**.
+- The model should correctly assign tasks to **the highest bidder**.
+
+---
+
+## 🛠️ Implementation Details
+### ** Agents (Worker Nodes)**
+- Each agent **manages its own resources (CPU & Memory)**.
+- Agents **bid based on their available resources**.
+
+### ** Broker (Task Allocator)**
+- **Collects bids from all agents**.
+- **Assigns the task to the highest bidder**.
+
+### ** Reinforcement Learning (QMIX)**
+- Uses **a centralized critic with decentralized execution**.
+- **Training optimizes task allocation decisions over time**.
+
+---
+
+## Contributors
+- **Marios Touloupou** –  marios.touloupou@cut.ac.cy
+- **Syedmafooqul Shah** - syedmafooqul.shah@cut.ac.cy
+
+
+Contributions to the DARO Framework are welcome. Please follow the standard git workflow - fork, clone, commit, push, and create pull requests.
+
+---
+
+## License
+This project is licensed under the **Apache License**.
+
+---
+
+## Acknowledgments
+
+The research leading to the results presented in this project has received funding from the European Union’s funded Project Hyper-AI under grant agreement no 101135982.
