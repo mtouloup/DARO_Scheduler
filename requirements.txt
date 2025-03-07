@@ -1,1 +1,3 @@
-# List project dependencies here
+numpy
+torch
+gym
