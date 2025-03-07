@@ -123,9 +123,6 @@ class KubernetesSchedulerEnv(gym.Env):
 
         return self.get_obs(), rewards, False, {}
 
-
-
-
     def get_obs(self):
         """Returns the state of all agents"""
         return np.array([agent.get_state_vector() for agent in self.agents])
