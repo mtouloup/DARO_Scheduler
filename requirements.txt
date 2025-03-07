@@ -1,0 +1,6 @@
+numpy
+torch
+gym
+flask
+flask_restx
+flask_cors
