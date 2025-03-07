@@ -87,16 +87,16 @@ python qmix_test.py
 
 **Note**: Ensure that the trained model is available and properly loaded by the API to make accurate scheduling decisions.
 
-## 🛠️ Implementation Details
-### ** Agents (Worker Nodes)**
+## Implementation Details
+### Agents (Worker Nodes)
 - Each agent **manages its own resources (CPU & Memory)**.
 - Agents **bid based on their available resources**.
 
-### ** Broker (Task Allocator)**
+### Broker (Task Allocator)
 - **Collects bids from all agents**.
 - **Assigns the task to the highest bidder**.
 
-### ** Reinforcement Learning (QMIX)**
+### Reinforcement Learning (QMIX)
 - Uses **a centralized critic with decentralized execution**.
 - **Training optimizes task allocation decisions over time**.
 
