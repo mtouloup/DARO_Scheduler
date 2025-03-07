@@ -1,3 +1,4 @@
+
 # Kubernetes MARL-Based Pod Scheduling (DARO Framework)
 
 This repository implements a **Multi-Agent Reinforcement Learning (MARL) scheduler** for **Kubernetes clusters** using the **QMIX algorithm**. The system enables worker nodes to **bid for pod execution**, ensuring **efficient task distribution** based on available resources.
@@ -57,6 +58,34 @@ python qmix_test.py
 - The model should correctly assign tasks to **the highest bidder**.
 
 ---
+## Running the API
+
+1. **Start the Flask Application**:
+   Run the Flask application to start the API server:
+   ```bash
+   python app.py
+   ```
+   By default, the API will be accessible at `http://127.0.0.1:5000/`.
+
+2. **Access the Swagger UI**:
+   Open your web browser and navigate to `http://127.0.0.1:5000/daro` to access the Swagger UI. This interface allows you to interact with the API endpoints and view documentation.
+
+3. **Using the `/schedule` Endpoint**:
+   The `/schedule` endpoint determines the most suitable node for deploying a pod based on the trained model. You can test this endpoint using the Swagger UI or by sending a POST request with the following JSON structure:
+   ```json
+   {
+       "cpu_request": 4.0,
+       "memory_request": 8.0,
+       "node_states": [
+           {"node_id": "node-0", "cpu_available": 110.0, "memory_available": 20.0},
+           {"node_id": "node-1", "cpu_available": 222.0, "memory_available": 6.0},
+           {"node_id": "node-2", "cpu_available": 312.0, "memory_available": 30.0}
+       ]
+   }
+   ```
+   The API will respond with the ID of the node selected for the pod deployment.
+
+**Note**: Ensure that the trained model is available and properly loaded by the API to make accurate scheduling decisions.
 
 ## 🛠️ Implementation Details
 ### ** Agents (Worker Nodes)**
