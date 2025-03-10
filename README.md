@@ -87,7 +87,7 @@ python qmix_test.py
 
 **Note**: Ensure that the trained model is available and properly loaded by the API to make accurate scheduling decisions.
 
-Running teh Api with Docker
+Running the Api with Docker
 ===================
 
 To simplify deployment, you can containerize and run the application using Docker.
