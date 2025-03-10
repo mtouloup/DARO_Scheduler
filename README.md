@@ -6,13 +6,6 @@ This repository implements a **Multi-Agent Reinforcement Learning (MARL) schedul
 ## Overview
 This project **simulates Kubernetes pod scheduling** using **multi-agent reinforcement learning (MARL)**. Each **worker node is an agent**, and a **broker collects bids from agents** to assign tasks efficiently.
 
-**Key Features:**
-**Multi-Agent Reinforcement Learning (MARL)** using QMIX  
-**Kubernetes-style scheduling** with CPU & memory constraints  
-**Dynamic cluster scaling** (agents can increase/decrease)  
-**Randomized bid-based pod scheduling**  
-**Training on CPU/GPU automatically detected**  
-
 ---
 
 ## How It Works
