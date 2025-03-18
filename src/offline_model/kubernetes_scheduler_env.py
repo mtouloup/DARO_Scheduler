@@ -48,7 +48,8 @@ class Broker:
     def __init__(self, agents):
         self.agents = agents
 
-    def collect_bids(self, task, actions):
+    
+    def collect_bids(self, task):
         """Collect valid bids from agents and return a list of (bid_value, agent) tuples"""
         bids = []
         print(f"\n📢 New Task {task.task_id}: Requires CPU={task.cpu_request:.2f}, Memory={task.memory_request:.2f}")
@@ -91,9 +92,9 @@ class KubernetesSchedulerEnv(gym.Env):
         )
         return self.get_obs()
 
-    def step(self, actions):
+    def step(self):
         """Processes agent bids and assigns the task"""
-        valid_bids = self.broker.collect_bids(self.current_task, actions)  # Collect bids
+        valid_bids = self.broker.collect_bids(self.current_task)  # Collect bids
 
         if valid_bids:
             # Sort by bid value in descending order

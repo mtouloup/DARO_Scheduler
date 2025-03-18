@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import random
 from kubernetes_scheduler_env import KubernetesSchedulerEnv
-from qmix_agent import QMIX
+from qmix_agent import QMIX, QNetwork
 
 # Hyperparameters
 NUM_EPISODES = 100
@@ -33,7 +33,6 @@ def adjust_state_size(state, num_agents, state_dim):
 
     if state.shape[0] > num_agents:
         state = state[:num_agents]
-
     elif state.shape[0] < num_agents:
         pad_size = num_agents - state.shape[0]
         pad_array = np.zeros((pad_size, state_dim), dtype=np.float32)
@@ -53,7 +52,7 @@ for episode in range(NUM_EPISODES):
 
     for step in range(MAX_STEPS):
         actions = qmix_agent.select_actions(state[:num_agents * state_dim].reshape(num_agents, state_dim), epsilon=epsilon)
-        next_state, rewards, _, _ = env.step(actions)
+        next_state, rewards, _, _ = env.step()
 
         next_state = adjust_state_size(np.array(next_state), num_agents, state_dim)
         replay_buffer.append((state, actions, rewards, next_state))
@@ -71,8 +70,21 @@ for episode in range(NUM_EPISODES):
     epsilon = max(EPSILON_END, epsilon * EPSILON_DECAY)
     print(f"🏆 Episode {episode}: Total Reward = {total_reward}")
 
-    if episode % 1000 == 0:
-        torch.save(qmix_agent.q_networks[0].state_dict(), f"qmix_model_ep{episode}.pth")
+# ✅ Aggregating all agent models into one general model (without saving individual models)
+print("\n📢 Aggregating agent models into a single general model...")
 
-torch.save(qmix_agent.q_networks[0].state_dict(), "qmix_trained_k8s.pth")
-print("✅ Training completed! Model saved as `qmix_trained_k8s.pth`.")
+# Initialize a new general model
+general_model = QNetwork(state_dim, action_dim)
+general_state_dict = general_model.state_dict()
+
+# Average the weights across all trained agents directly from memory
+for key in general_state_dict.keys():
+    general_state_dict[key] = sum(qmix_agent.q_networks[i].state_dict()[key] for i in range(num_agents)) / num_agents
+
+# Load the averaged weights into the general model
+general_model.load_state_dict(general_state_dict)
+
+# Save only the general model for deployment
+torch.save(general_model.state_dict(), "qmix_general_model.pth")
+
+print("✅ Training completed! General model saved as `qmix_general_model.pth`.")
