@@ -1,6 +1,8 @@
 import numpy as np
 import torch
 import random
+import pandas as pd
+import matplotlib.pyplot as plt
 from kubernetes_scheduler_env import KubernetesSchedulerEnv
 from qmix_agent import QMIX, QNetwork
 
@@ -17,11 +19,11 @@ LEARNING_RATE = 1e-3
 
 # Initialize Kubernetes environment
 env = KubernetesSchedulerEnv(min_agents=3, max_agents=10)
-num_agents = len(env.agents)  # Always get the latest agent count
 state_dim = 2
 action_dim = 11
 
 # Initialize QMIX agent
+num_agents = env.num_agents  # Get initial number of agents
 qmix_agent = QMIX(num_agents=num_agents, input_dim=state_dim, output_dim=action_dim, lr=LEARNING_RATE, gamma=GAMMA)
 
 # Replay memory
@@ -42,18 +44,26 @@ def adjust_state_size(state, num_agents, state_dim):
 
 # Training loop
 epsilon = EPSILON_START
+bid_tracking = []  # ✅ Fixed bid tracking
+
 for episode in range(NUM_EPISODES):
     state = np.array(env.reset())
-    num_agents = env.num_agents  # Update dynamically
+    num_agents = env.num_agents  # Dynamically update the number of agents
     state = adjust_state_size(state, num_agents, state_dim)
-    
+
     total_reward = 0
     print(f"📢 Episode {episode}: Training with {num_agents} worker nodes!")
 
+    # ✅ Ensure bid tracking is correctly sized for this episode
+    episode_bids = []  # Store all bids per step
+
     for step in range(MAX_STEPS):
         actions = qmix_agent.select_actions(state[:num_agents * state_dim].reshape(num_agents, state_dim), epsilon=epsilon)
-        next_state, rewards, _, _ = env.step()
 
+        # ✅ Store all bids step by step
+        episode_bids.append([int(bid) for bid in actions]) 
+
+        next_state, rewards, _, _ = env.step(actions)
         next_state = adjust_state_size(np.array(next_state), num_agents, state_dim)
         replay_buffer.append((state, actions, rewards, next_state))
 
@@ -70,7 +80,33 @@ for episode in range(NUM_EPISODES):
     epsilon = max(EPSILON_END, epsilon * EPSILON_DECAY)
     print(f"🏆 Episode {episode}: Total Reward = {total_reward}")
 
-# ✅ Aggregating all agent models into one general model (without saving individual models)
+    # ✅ Append episode bids properly
+    bid_tracking.append(episode_bids)
+
+# ✅ Convert bid tracking into DataFrame
+# Ensure all episodes are stored correctly and properly padded
+max_agents = max(len(max(episode, key=len)) for episode in bid_tracking)  # Find max agents across episodes
+
+# Flatten and format the bid tracking data properly
+formatted_bids = []
+for episode in bid_tracking:
+    episode_bids = []
+    for step in episode:
+        # Ensure all bids are integers
+        int_bids = [int(bid) for bid in step]
+        episode_bids.append(int_bids + [None] * (max_agents - len(int_bids)))  # Use None instead of NaN
+    formatted_bids.extend(episode_bids)
+
+# Convert to a DataFrame
+bid_data = pd.DataFrame(formatted_bids)
+
+# Convert all numeric columns explicitly to integers
+bid_data = bid_data.astype("Int64")  # Uses Pandas nullable integer type to handle missing values
+
+# Save the corrected bid data
+bid_data.to_csv("agent_bids.csv", index=False)
+
+# ✅ Aggregating all agent models into one general model
 print("\n📢 Aggregating agent models into a single general model...")
 
 # Initialize a new general model
