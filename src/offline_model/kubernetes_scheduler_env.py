@@ -26,42 +26,20 @@ class Agent:
             self.memory_capacity - self.current_memory_usage
         ], dtype=np.float32)
 
-    def calculate_bid(self, task):
-        """Agents generate a random bid between 1 and 10 if they have enough resources"""
-        available_cpu = self.cpu_capacity - self.current_cpu_usage
-        available_memory = self.memory_capacity - self.current_memory_usage
-
-        # Print debug info
-        print(f"🖥️ Agent {self.node_id} - Available: CPU={available_cpu:.2f}, Memory={available_memory:.2f}")
-        print(f"   📌 Task {task.task_id} - Requires: CPU={task.cpu_request:.2f}, Memory={task.memory_request:.2f}")
-
-        if task.cpu_request <= available_cpu and task.memory_request <= available_memory:
-            bid = np.random.randint(1, 11)  # Random bid from 1 to 10
-            print(f"   ✅ Agent {self.node_id} bids {bid}")
-            return bid
-        else:
-            print(f"   ❌ Agent {self.node_id} cannot bid (Insufficient resources)")
-            return -1  # No bid if insufficient resources
-
 class Broker:
     """Broker that collects bids but does NOT decide—decision is learned via MARL"""
     def __init__(self, agents):
         self.agents = agents
 
+    
     def collect_bids(self, task, actions):
-        """Collect valid bids from agents and return a list of (bid_value, agent) tuples"""
+        """Collect valid bids from agents based on the QMIX-selected actions."""
         bids = []
-        print(f"\n📢 New Task {task.task_id}: Requires CPU={task.cpu_request:.2f}, Memory={task.memory_request:.2f}")
-
-        for i in range(len(self.agents)):
-            agent = self.agents[i]
-            bid = agent.calculate_bid(task)  # Call `calculate_bid()`
-
-            print(f"   🔹 Agent {agent.node_id}: Bid={bid}")  # Print agent bid
+        for i, agent in enumerate(self.agents):
+            bid = actions[i]  # ✅ Use the action selected by QMIX
             if bid != -1:
-                bids.append((bid, agent))  # Store as (bid_value, agent) tuple
-
-        return bids  # Always return a list
+                bids.append((bid, agent))
+        return bids
 
 class KubernetesSchedulerEnv(gym.Env):
     """Multi-Agent Reinforcement Learning (MARL) Kubernetes Scheduling Environment"""
@@ -82,6 +60,7 @@ class KubernetesSchedulerEnv(gym.Env):
     def reset(self):
         """Resets environment and returns initial observations"""
         self.num_agents = random.randint(self.min_agents, self.max_agents)
+        print(f"🔄 Reset: {self.num_agents} agents initialized")  # Debugging print
         self.agents = self._create_agents(self.num_agents)
         self.broker = Broker(self.agents)  # Reinitialize broker
         self.current_task = Task(
@@ -93,7 +72,7 @@ class KubernetesSchedulerEnv(gym.Env):
 
     def step(self, actions):
         """Processes agent bids and assigns the task"""
-        valid_bids = self.broker.collect_bids(self.current_task, actions)  # Collect bids
+        valid_bids = self.broker.collect_bids(self.current_task, actions)  # ✅ Pass QMIX actions
 
         if valid_bids:
             # Sort by bid value in descending order

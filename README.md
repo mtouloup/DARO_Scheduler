@@ -27,10 +27,10 @@ This project **simulates Kubernetes pod scheduling** using **multi-agent reinfor
 ---
 
 ## Installation
-### Prerequisites
+### ** Prerequisites**
 Ensure you have **Python 3.8+** installed.  
 
-### Install Dependencies
+### ** Install Dependencies**
 ```
 pip install -r requirements.txt
 ```
@@ -39,7 +39,7 @@ pip install -r requirements.txt
 
 ## Usage
 
-### Training the Model
+### ** Training the Model**
 Train the MARL scheduler using:
 ```
 python qmix_training.py
@@ -49,7 +49,7 @@ python qmix_training.py
 
 ---
 
-### Testing the Model
+### ** Testing the Model**
 Once trained, evaluate the model:
 ```
 python qmix_test.py
@@ -58,7 +58,7 @@ python qmix_test.py
 - The model should correctly assign tasks to **the highest bidder**.
 
 ---
-## Running the API
+## Running the API (Locally)
 
 1. **Start the Flask Application**:
    Run the Flask application to start the API server:
@@ -87,16 +87,48 @@ python qmix_test.py
 
 **Note**: Ensure that the trained model is available and properly loaded by the API to make accurate scheduling decisions.
 
-## Implementation Details
-### Agents (Worker Nodes)
+Running the Api with Docker
+===================
+
+To simplify deployment, you can containerize and run the application using Docker.
+
+Prerequisites
+-------------
+
+Ensure you have Docker installed. You can download it fromDocker's official website: https://docs.docker.com/get-docker/
+
+Steps to Run
+------------
+
+1\. Clone the Repository:
+
+   git clone https://github.com/mtouloup/DARO\_Scheduler.git  
+   cd DARO\_Scheduler
+
+2\. Build the Docker Image:
+
+docker build -tdaro\_scheduler .
+
+3\. Run the Container:
+
+docker run -p5000:5000 daro\_scheduler
+
+This command startsthe application inside a container and exposes it on port 5000. Adjust the port if needed.
+
+Access the API
+--------------
+
+Open your browser and navigate to:  http://127.0.0.1:5000/daro
+## 🛠️ Implementation Details
+### ** Agents (Worker Nodes)**
 - Each agent **manages its own resources (CPU & Memory)**.
 - Agents **bid based on their available resources**.
 
-### Broker (Task Allocator)
+### ** Broker (Task Allocator)**
 - **Collects bids from all agents**.
 - **Assigns the task to the highest bidder**.
 
-### Reinforcement Learning (QMIX)
+### ** Reinforcement Learning (QMIX)**
 - Uses **a centralized critic with decentralized execution**.
 - **Training optimizes task allocation decisions over time**.
 
@@ -119,3 +151,6 @@ This project is licensed under the **Apache License**.
 ## Acknowledgments
 
 The research leading to the results presented in this project has received funding from the European Union’s funded Project Hyper-AI under grant agreement no 101135982.
+
+
+

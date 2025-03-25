@@ -46,7 +46,7 @@ class QMIX:
         for i in range(num_agents):
             state_tensor = torch.tensor(states[i], dtype=torch.float32).unsqueeze(0)
             if np.random.rand() < epsilon:
-                action = np.random.randint(0, 11)  # Random bid
+                action = np.random.randint(1, 10)  # Random bid
             else:
                 with torch.no_grad():
                     q_values = self.q_networks[i](state_tensor)
