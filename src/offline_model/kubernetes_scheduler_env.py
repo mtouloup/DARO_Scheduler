@@ -65,7 +65,7 @@ class KubernetesSchedulerEnv(gym.Env):
         self.current_task = None
         return self.get_obs()
 
-    def step(self, actions):
+    def evaluate_bids(self, actions):
         task = self.current_task
         valid_bids = []
 
@@ -86,34 +86,43 @@ class KubernetesSchedulerEnv(gym.Env):
             else:
                 if bid >= 0:
                     print(f"   ❌ Agent {agent.node_id} bid {bid} but lacks resources "
-                          f"(CPU: {available_cpu:.2f}/{task.cpu_request:.2f}, "
-                          f"Memory: {available_memory:.2f}/{task.memory_request:.2f})")
+                        f"(CPU: {available_cpu:.2f}/{task.cpu_request:.2f}, "
+                        f"Memory: {available_memory:.2f}/{task.memory_request:.2f})")
 
         print(f"\n📢 New Task {task.task_id}: Requires CPU={task.cpu_request:.2f}, Memory={task.memory_request:.2f}")
         for i in range(self.num_agents):
             agent = self.agents[i]
             print(f"   🔹 Agent {agent.node_id}: Available CPU={agent.cpu_capacity - agent.current_cpu_usage:.2f}, "
-                  f"Memory={agent.memory_capacity - agent.current_memory_usage:.2f}, Bid={actions[i]}")
+                f"Memory={agent.memory_capacity - agent.current_memory_usage:.2f}, Bid={actions[i]}")
 
         if valid_bids:
             valid_bids.sort(reverse=True, key=lambda x: x[0])
             highest_bid, winner_agent = valid_bids[0]
             winner_index = self.agents.index(winner_agent)
 
+            # Apply task assignment
             winner_agent.current_cpu_usage += task.cpu_request
             winner_agent.current_memory_usage += task.memory_request
 
             print(f"🏆 Task {task.task_id} assigned to {winner_agent.node_id} with highest bid {highest_bid}")
             print(f"   ✅ New Usage - CPU: {winner_agent.current_cpu_usage:.2f}/{winner_agent.cpu_capacity}, "
-                  f"Memory: {winner_agent.current_memory_usage:.2f}/{winner_agent.memory_capacity}")
+                f"Memory: {winner_agent.current_memory_usage:.2f}/{winner_agent.memory_capacity}")
         else:
             winner_index = -1
 
+        return winner_index
+
+    def calculate_rewards(self, winner_index):
         rewards = [-0.1] * self.num_agents
         if winner_index != -1:
             rewards[winner_index] = 1.0
+        return rewards
 
+    def step(self, actions):
+        winner_index = self.evaluate_bids(actions)
+        rewards = self.calculate_rewards(winner_index)
         return self.get_obs(), rewards, False, {}
+
 
     def get_obs(self):
         return np.array([agent.get_state_vector() for agent in self.agents])
