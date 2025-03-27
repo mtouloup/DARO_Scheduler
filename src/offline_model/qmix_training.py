@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import random
 import pandas as pd
-from kubernetes_scheduler_env import KubernetesSchedulerEnv
+from kubernetes_scheduler_env import KubernetesSchedulerEnv, Task
 from qmix_agent import QMIX, QNetwork
 
 # Hyperparameters
@@ -57,7 +57,15 @@ for episode in range(NUM_EPISODES):
     episode_bids = []
 
     for step in range(MAX_STEPS):
-        print(f"\n📌 Task {env.current_task.task_id}: CPU={env.current_task.cpu_request:.2f}, Mem={env.current_task.memory_request:.2f}")
+        # Generate and set new task for the environment
+        task = Task(
+            task_id=random.randint(1, 1000),
+            cpu_request=random.uniform(0.5, 16),
+            memory_request=random.uniform(1, 128)
+        )
+        env.set_current_task(task)
+
+        print(f"\n📌 Task {task.task_id}: CPU={task.cpu_request:.2f}, Mem={task.memory_request:.2f}")
 
         actions = env.broker.select_actions_from_qmix(
             qmix_agent, 
