@@ -2,6 +2,7 @@ import numpy as np
 import torch
 import random
 import pandas as pd
+import time
 from kubernetes_scheduler_env import KubernetesSchedulerEnv, Task
 from qmix_agent import QMIX, QNetwork
 
@@ -28,6 +29,9 @@ qmix_agent = QMIX(num_agents=num_agents, input_dim=state_dim, output_dim=action_
 # Replay memory
 replay_buffer = []
 
+# Decision log for future reward analysis
+decision_log = []
+
 def adjust_state_size(state, num_agents, state_dim):
     state = np.array(state)
     if state.shape[0] > num_agents:
@@ -47,7 +51,7 @@ for episode in range(NUM_EPISODES):
     state = adjust_state_size(state, num_agents, state_dim)
     total_reward = 0
 
-    print(f"\n📢 Episode {episode}: Training with {num_agents} worker nodes!")
+    print(f"\n📲 Episode {episode}: Training with {num_agents} worker nodes!")
 
     for i, agent in enumerate(env.agents):
         cpu_remaining = agent.cpu_capacity - agent.current_cpu_usage
@@ -57,7 +61,6 @@ for episode in range(NUM_EPISODES):
     episode_bids = []
 
     for step in range(MAX_STEPS):
-        # Generate and set new task for the environment
         task = Task(
             task_id=random.randint(1, 1000),
             cpu_request=random.uniform(0.5, 16),
@@ -68,14 +71,25 @@ for episode in range(NUM_EPISODES):
         print(f"\n📌 Task {task.task_id}: CPU={task.cpu_request:.2f}, Mem={task.memory_request:.2f}")
 
         actions = env.broker.select_actions_from_qmix(
-            qmix_agent, 
-            state[:num_agents * state_dim].reshape(num_agents, state_dim), 
+            qmix_agent,
+            state[:num_agents * state_dim].reshape(num_agents, state_dim),
             epsilon=epsilon
         )
 
         print(f"🎯 Bidding Results:")
         for i, bid in enumerate(actions):
             print(f"   🤖 Agent {i} bids {bid}")
+
+            # Store decision log entry for potential delayed reward
+            decision_log.append({
+                "episode": episode,
+                "step": step,
+                "timestamp": time.time(),
+                "task_id": task.task_id,
+                "agent_id": i,
+                "state": state[i].tolist(),
+                "action": int(bid)
+            })
 
         episode_bids.append([int(bid) for bid in actions])
         next_state, rewards, _, _ = env.step(actions)
@@ -103,7 +117,6 @@ for episode in range(NUM_EPISODES):
     print(f"\n🏆 Episode {episode}: Total Reward = {total_reward}")
     bid_tracking.append(episode_bids)
 
-    # ⏺️ Aggregate into a general model after each episode
     print("🔄 Updating general model from agent models...")
     general_model = QNetwork(state_dim, action_dim)
     general_state_dict = general_model.state_dict()
@@ -111,7 +124,6 @@ for episode in range(NUM_EPISODES):
         general_state_dict[key] = sum(qmix_agent.q_networks[i].state_dict()[key] for i in range(num_agents)) / num_agents
     general_model.load_state_dict(general_state_dict)
 
-    # ⏺️ Sync the general model back into all agent models
     for i in range(num_agents):
         qmix_agent.q_networks[i].load_state_dict(general_state_dict)
     print("✅ Agent models synced with general model.")
@@ -125,6 +137,10 @@ for episode in bid_tracking:
         formatted_bids.append(int_bids + [None] * (max_agents - len(int_bids)))
 bid_data = pd.DataFrame(formatted_bids)
 bid_data.to_csv("agent_bids.csv", index=False)
+
+# Save decision log for delayed reward analysis
+decision_df = pd.DataFrame(decision_log)
+decision_df.to_csv("decision_log.csv", index=False)
 
 # Save final general model
 torch.save(general_model.state_dict(), "qmix_general_model.pth")
