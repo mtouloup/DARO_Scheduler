@@ -17,7 +17,7 @@ EPSILON_DECAY = 0.999
 LEARNING_RATE = 1e-3
 
 # Initialize Kubernetes environment
-env = KubernetesSchedulerEnv(min_agents=3, max_agents=10)
+env = KubernetesSchedulerEnv(min_agents=3, max_agents=50)
 state_dim = 2
 action_dim = 11
 

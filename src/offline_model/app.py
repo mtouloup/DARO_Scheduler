@@ -28,7 +28,7 @@ api_doc.add_namespace(api)
 app.register_blueprint(api_doc_blueprint)
 
 # Load trained QMIX model
-MODEL_PATH = "qmix_trained_k8s.pth"
+MODEL_PATH = "qmix_general_model.pth"
 state_dim = 2  # Each agent's state consists of (CPU availability, Memory availability)
 action_dim = 11  # Agents can bid between 1 and 10
 
