@@ -6,7 +6,7 @@ from kubernetes_scheduler_env import KubernetesSchedulerEnv
 from qmix_agent import QMIX, QNetwork
 
 # Hyperparameters
-NUM_EPISODES = 10
+NUM_EPISODES = 1
 MAX_STEPS = 50
 BATCH_SIZE = 32
 REPLAY_BUFFER_SIZE = 10000
@@ -66,7 +66,7 @@ for episode in range(NUM_EPISODES):
         print(f"\n📌 Task {env.current_task.task_id}: CPU={env.current_task.cpu_request:.2f}, Mem={env.current_task.memory_request:.2f}")
 
         # Select actions (bids)
-        actions = qmix_agent.select_actions(state[:num_agents * state_dim].reshape(num_agents, state_dim), epsilon=epsilon)
+        actions = env.broker.select_actions_from_qmix(qmix_agent, state[:num_agents * state_dim].reshape(num_agents, state_dim), epsilon=epsilon)
 
         # ✅ Log agent bids
         print(f"🎯 Bidding Results:")

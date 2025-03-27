@@ -30,16 +30,11 @@ class Broker:
     """Broker that collects bids but does NOT decide—decision is learned via MARL"""
     def __init__(self, agents):
         self.agents = agents
-
-    
-    def collect_bids(self, task, actions):
-        """Collect valid bids from agents based on the QMIX-selected actions."""
-        bids = []
-        for i, agent in enumerate(self.agents):
-            bid = actions[i]  # ✅ Use the action selected by QMIX
-            if bid != -1:
-                bids.append((bid, agent))
-        return bids
+  
+    def select_actions_from_qmix(self, qmix_agent, state, epsilon=0.1):
+        """Broker queries the QMIX agent for bids on behalf of all agents."""
+        actions = qmix_agent.select_actions(state, epsilon)
+        return actions
 
 class KubernetesSchedulerEnv(gym.Env):
     """Multi-Agent Reinforcement Learning (MARL) Kubernetes Scheduling Environment"""
