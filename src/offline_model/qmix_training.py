@@ -7,8 +7,8 @@ from kubernetes_scheduler_env import KubernetesSchedulerEnv, Task
 from qmix_agent import QMIX, QNetwork
 
 # Hyperparameters
-NUM_EPISODES = 10
-MAX_STEPS = 50
+NUM_EPISODES = 1
+MAX_STEPS = 10
 BATCH_SIZE = 32
 REPLAY_BUFFER_SIZE = 10000
 GAMMA = 0.99
@@ -19,7 +19,7 @@ LEARNING_RATE = 1e-3
 
 # Initialize Kubernetes environment
 env = KubernetesSchedulerEnv(min_agents=3, max_agents=10)
-state_dim = 2
+state_dim = 6
 action_dim = 11
 
 # Initialize QMIX agent
@@ -46,9 +46,17 @@ epsilon = EPSILON_START
 bid_tracking = []
 
 for episode in range(NUM_EPISODES):
-    state = np.array(env.reset())
+    env.reset()
     num_agents = env.num_agents
-    state = adjust_state_size(state, num_agents, state_dim)
+
+    first_task = Task(
+        task_id=random.randint(1, 1000),
+        cpu_request=random.uniform(0.5, 16),
+        memory_request=random.uniform(1, 128)
+    )
+    env.set_current_task(first_task)
+
+    state = adjust_state_size(env.get_obs(), num_agents, state_dim)
     total_reward = 0
 
     print(f"\n📲 Episode {episode}: Training with {num_agents} worker nodes!")
@@ -56,11 +64,12 @@ for episode in range(NUM_EPISODES):
     for i, agent in enumerate(env.agents):
         cpu_remaining = agent.cpu_capacity - agent.current_cpu_usage
         mem_remaining = agent.memory_capacity - agent.current_memory_usage
-        print(f"   🖥️ Agent {i}: CPU={cpu_remaining:.2f}, Mem={mem_remaining:.2f}")
+        #print(f"   🖥️ Agent {i}: CPU={cpu_remaining:.2f}, Mem={mem_remaining:.2f}")
 
     episode_bids = []
 
     for step in range(MAX_STEPS):
+        # ✅ Generate task and set it explicitly
         task = Task(
             task_id=random.randint(1, 1000),
             cpu_request=random.uniform(0.5, 16),
@@ -76,11 +85,9 @@ for episode in range(NUM_EPISODES):
             epsilon=epsilon
         )
 
-        print(f"🎯 Bidding Results:")
+        
         for i, bid in enumerate(actions):
-            print(f"   🤖 Agent {i} bids {bid}")
 
-            # Store decision log entry for potential delayed reward
             decision_log.append({
                 "episode": episode,
                 "step": step,
@@ -138,10 +145,9 @@ for episode in bid_tracking:
 bid_data = pd.DataFrame(formatted_bids)
 bid_data.to_csv("agent_bids.csv", index=False)
 
-# Save decision log for delayed reward analysis
-decision_df = pd.DataFrame(decision_log)
-decision_df.to_csv("decision_log.csv", index=False)
+# Save decision log
+pd.DataFrame(decision_log).to_csv("decision_log.csv", index=False)
 
-# Save final general model
+# Save model
 torch.save(general_model.state_dict(), "qmix_general_model.pth")
 print("✅ Final general model saved as `qmix_general_model.pth`.")

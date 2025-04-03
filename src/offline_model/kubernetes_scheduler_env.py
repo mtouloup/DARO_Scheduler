@@ -19,11 +19,16 @@ class Agent:
         self.current_cpu_usage = 0.0
         self.current_memory_usage = 0.0
 
-    def get_state_vector(self):
+    def get_state_vector(self, task):
         return np.array([
+            self.cpu_capacity,
+            self.memory_capacity,
             self.cpu_capacity - self.current_cpu_usage,
-            self.memory_capacity - self.current_memory_usage
+            self.memory_capacity - self.current_memory_usage,
+            task.cpu_request,
+            task.memory_request
         ], dtype=np.float32)
+
 
 class Broker:
     def __init__(self, agents):
@@ -41,7 +46,7 @@ class KubernetesSchedulerEnv(gym.Env):
         self.agents = self._create_agents(self.num_agents)
         self.broker = Broker(self.agents)
         self.action_space = spaces.MultiDiscrete([11] * self.num_agents)
-        self.observation_space = spaces.Box(low=0, high=256, shape=(self.max_agents, 2), dtype=np.float32)
+        self.observation_space = spaces.Box(low=0, high=256, shape=(self.max_agents, 6), dtype=np.float32)
         self.current_task = None
 
     def _create_agents(self, num_agents):
@@ -63,14 +68,13 @@ class KubernetesSchedulerEnv(gym.Env):
         self.agents = self._create_agents(self.num_agents)
         self.broker = Broker(self.agents)
         self.current_task = None
-        return self.get_obs()
+        return None
 
     def evaluate_bids(self, actions):
         task = self.current_task
         valid_bids = []
 
         print(f"\n📌 Task {task.task_id}: CPU={task.cpu_request:.2f}, Mem={task.memory_request:.2f}")
-        print(f"🎯 Bidding Results:")
 
         for i in range(self.num_agents):
             agent = self.agents[i]
@@ -78,9 +82,7 @@ class KubernetesSchedulerEnv(gym.Env):
 
             available_cpu = agent.cpu_capacity - agent.current_cpu_usage
             available_memory = agent.memory_capacity - agent.current_memory_usage
-
-            print(f"   🤖 Agent {i} bids {bid}")
-
+           
             if bid > 0 and task.cpu_request <= available_cpu and task.memory_request <= available_memory:
                 valid_bids.append((bid, agent))
             else:
@@ -125,4 +127,8 @@ class KubernetesSchedulerEnv(gym.Env):
 
 
     def get_obs(self):
-        return np.array([agent.get_state_vector() for agent in self.agents])
+        return np.array([
+            agent.get_state_vector(self.current_task) for agent in self.agents
+        ])
+    
+    
